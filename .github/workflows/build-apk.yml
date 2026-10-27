@@ -1,4 +1,4 @@
-name: Build Android APK
+Name: Build Android APK
 
 on:
   push:
@@ -19,14 +19,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Find and Build APK
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          elif [ -f "./HisabKitabAndroid/gradlew" ]; then
+            cd HisabKitabAndroid
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            echo "Searching for gradlew..."
+            find . -name "gradlew" -exec chmod +x {} \;
+            GRADLE_PATH=$(find . -name "gradlew" | head -n 1)
+            DIR_PATH=$(dirname "$GRADLE_PATH")
+            cd "$DIR_PATH"
+            ./gradlew assembleDebug
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: '**/build/outputs/apk/debug/app-debug.apk'
